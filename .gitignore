@@ -1,0 +1,28 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Secrets: keep examples, never real credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.streamlit/secrets.*.toml
+
+# Candidate resumes, extracted data, and generated screening results
+*.pdf
+uploads/
+data/
+outputs/
+work/
+screening_result*.json
+
+# Local logs and editor/OS files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
