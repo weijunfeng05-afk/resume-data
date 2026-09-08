@@ -49,29 +49,29 @@ class ScreeningTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "简历文本为空"):
             screening.screen_resume("   ", api_key="test")
 
-    @patch("screening.Ark")
+    @patch("screening.OpenAI")
     def test_api_connection_checks_selected_model(self, ark_cls):
         message = type("Message", (), {"content": "连接成功"})()
         choice = type("Choice", (), {"message": message})()
         ark_cls.return_value.chat.completions.create.return_value = type(
             "Completion", (), {"choices": [choice]}
         )()
-        reply = screening.test_ark_connection(api_key="test-key")
+        reply = screening.test_deepseek_connection(api_key="test-key")
         self.assertEqual(reply, "连接成功")
         ark_cls.assert_called_once_with(
-            api_key="test-key", base_url=screening.DEFAULT_ARK_BASE_URL
+            api_key="test-key", base_url=screening.DEFAULT_DEEPSEEK_BASE_URL, timeout=120, max_retries=0
         )
         kwargs = ark_cls.return_value.chat.completions.create.call_args.kwargs
-        self.assertEqual(kwargs["model"], screening.DEFAULT_ARK_MODEL)
+        self.assertEqual(kwargs["model"], screening.DEFAULT_DEEPSEEK_MODEL)
 
     def test_coding_plan_base_url_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "api/coding/v3"):
-            screening.test_ark_connection(
+        with self.assertRaisesRegex(ValueError, "DeepSeek 官方地址"):
+            screening.test_deepseek_connection(
                 api_key="test-key",
                 base_url="https://ark.cn-beijing.volces.com/api/coding/v3",
             )
 
-    @patch("screening.Ark")
+    @patch("screening.OpenAI")
     def test_model_call_uses_strict_schema_and_returns_json(self, ark_cls):
         captured = {}
 
@@ -87,8 +87,10 @@ class ScreeningTests(unittest.TestCase):
         ark_cls.return_value.chat.completions = FakeCompletions()
         result = screening.screen_resume("候选人有 AI 原型经验", api_key="test-key")
 
+        self.assertEqual(captured["response_format"], {"type": "json_object"})
+        self.assertEqual(captured["extra_body"], {"thinking": {"type": "disabled"}})
         self.assertEqual(result, SAMPLE_RESULT)
-        self.assertEqual(captured["model"], screening.DEFAULT_ARK_MODEL)
+        self.assertEqual(captured["model"], screening.DEFAULT_DEEPSEEK_MODEL)
         self.assertIn("不能自动决定录用或淘汰", captured["messages"][0]["content"])
         self.assertIn("完全忽略性别", captured["messages"][0]["content"])
 
